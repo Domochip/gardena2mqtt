@@ -5,11 +5,13 @@ from threading import Thread
 import time
 import sys
 import requests
+import paho.mqtt.client as mqtt
+import json
 
 if __name__ == "__main__":
     logging.basicConfig( format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber='0.0.1'
+    versionnumber='0.0.2'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
