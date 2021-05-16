@@ -21,6 +21,15 @@ def publish_everything():
         for device in location.devices.values():
             publish_device(device)
 
+def subscribe_device(device):
+    if mqttclientconnected:
+        mqttclient.subscribe(f"{mqttprefix}/{locationName}/{device.name}/control")
+
+def subscribe_everything():
+    global smart_system
+    for location in smart_system.locations.values():
+        for device in location.devices.values():
+            subscribe_device(device)
 
 
 # callback when the broker responds to our connection request.
@@ -28,7 +37,7 @@ def on_mqtt_connect(client, userdata, flags, rc):
     global mqttclientconnected
     mqttclientconnected = True
     logging.info("Connected to MQTT host")
-    mqttclient.subscribe(f"{mqttprefix}/send")
+    subscribe_everything()
     if not smartsystemclientconnected:
         mqttclient.publish(f"{mqttprefix}/connected", "1", 0, True)
     else:
@@ -76,7 +85,7 @@ def shutdown(signum=None, frame=None):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '0.5.0'
+    versionnumber = '0.6.0'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
