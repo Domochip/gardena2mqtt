@@ -2,6 +2,9 @@
 
 You need one or more Garden Smart system devices : https://www.gardena.com/int/products/smart/  
 A developper application to access gardena API : https://developer.husqvarnagroup.cloud/docs/getting-started
+This application needs to be connected to Authentication API AND GARDENA smart system API like this : 
+![Application](https://raw.githubusercontent.com/Domochip/gardena2mqtt/master/application.png)
+("Create application" button -> Fill In Name only -> "Create" button -> "+Connect new API" button -> Add both API)
 
 This image uses the new Gardena API which allows to be informed immediately when an event occurs on any Smart System device.
 
