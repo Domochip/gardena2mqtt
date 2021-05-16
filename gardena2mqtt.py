@@ -163,7 +163,7 @@ def shutdown(signum=None, frame=None):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '0.8.0'
+    versionnumber = '1.0.0'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
