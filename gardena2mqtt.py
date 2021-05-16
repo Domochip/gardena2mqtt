@@ -53,10 +53,19 @@ def on_mqtt_disconnect(client, userdata, rc):
     
 # callback when a message has been received on a topic that the client subscribes to.
 def on_mqtt_message(client, userdata, msg):
-    logging.info(f'MQTT received : {msg.payload}')
+
+    splittedTopic = msg.topic.split('/')
+    splittedTopic[len(splittedTopic)-1] = 'result'
+    resultTopic = '/'.join(splittedTopic)
+
+    try:
+        decodedPayload = msg.payload.decode('utf-8')
+    except:
+        logging.error('Message skipped: payload %s is not valid on topic %s', msg.payload.hex(), msg.topic)
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"Message ignored as payload can't be decoded", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":msg.payload.hex()}, ensure_ascii=False))
+        return
 
     # looking for the right device
-    splittedTopic = msg.topic.split('/')
     thisLocationName = splittedTopic[len(splittedTopic)-3]
     for location in smart_system.locations.values():
         if location.name == thisLocationName:
@@ -68,28 +77,33 @@ def on_mqtt_message(client, userdata, msg):
     
     # parse payload
     try:
-        parsedPayload = json.loads(msg.payload)
+        parsedPayload = json.loads(decodedPayload)
     except:
-        logging.error(f'Incorrect JSON received : {msg.payload}')
+        logging.error(f'Incorrect JSON received : {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"Incorrect JSON received", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
 
     if 'command' not in parsedPayload:
-        logging.error(f'command missing in payload received : {msg.payload}')
+        logging.error(f'command missing in payload received : {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"command missing in payload received", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
 
     if not type(parsedPayload['command']) is str:
-        logging.error(f'Incorrect command in payload received : {msg.payload}')
+        logging.error(f'Incorrect command in payload received : {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"Incorrect command in payload received", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
 
     # looking for the method requested
     try:
         thisDeviceMethod = getattr(thisDevice, parsedPayload['command'])
     except:
-        logging.error(f'command received doesn\'t exists for this device: {msg.payload}')
+        logging.error(f'command received doesn\'t exists for this device: {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"command received doesn\'t exists for this device", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
 
     if not callable(thisDeviceMethod):
-        logging.error(f'command received doesn\'t exists for this device: {msg.payload}')
+        logging.error(f'command received doesn\'t exists for this device: {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"command received doesn\'t exists for this device", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
 
     params = []
@@ -102,6 +116,7 @@ def on_mqtt_message(client, userdata, msg):
                 params.append(parsedPayload[paramName])
             except:
                 logging.error(f'The parameter {paramName} is missing. command can\'t be executed')
+                mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":f'The parameter {paramName} is missing. command can\'t be executed', "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
                 return
 
     # run the command
@@ -113,8 +128,11 @@ def on_mqtt_message(client, userdata, msg):
         elif len(params) == 2:
             thisDeviceMethod(params[0], params[1])
     except:
-        logging.exception(f'execution of the command failed: {msg.payload}')
+        logging.exception(f'execution of the command failed: {decodedPayload}')
+        mqttclient.publish(resultTopic, json.dumps({"result":"error", "reason":"execution of the command failed", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":decodedPayload}, ensure_ascii=False))
         return
+
+    mqttclient.publish(resultTopic, json.dumps({"result":"success", "datetime":time.strftime("%Y-%m-%d %H:%M:%S"), "request":parsedPayload}, ensure_ascii=False))
 
 def on_ws_status_changed(status):
     global smartsystemclientconnected
