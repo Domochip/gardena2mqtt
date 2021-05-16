@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 
 def publish_device(device):
     global locationName
-    infos = {}
+    infos = {"datetime":time.strftime("%Y-%m-%d %H:%M:%S")}
     for attrName in vars(device):
         if not attrName.startswith('_') and attrName not in ('smart_system', 'callbacks'):
             infos[attrName] = getattr(device, attrName)
