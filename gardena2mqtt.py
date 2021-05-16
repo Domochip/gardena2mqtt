@@ -70,30 +70,48 @@ def on_mqtt_message(client, userdata, msg):
     try:
         parsedPayload = json.loads(msg.payload)
     except:
-        logging.info(f'Incorrect JSON received : {msg.payload}')
+        logging.error(f'Incorrect JSON received : {msg.payload}')
         return
 
     if 'command' not in parsedPayload:
-        logging.info(f'command missing in payload received : {msg.payload}')
+        logging.error(f'command missing in payload received : {msg.payload}')
         return
 
     if not type(parsedPayload['command']) is str:
-        logging.info(f'Incorrect command in payload received : {msg.payload}')
+        logging.error(f'Incorrect command in payload received : {msg.payload}')
         return
 
     # looking for the method requested
     try:
         thisDeviceMethod = getattr(thisDevice, parsedPayload['command'])
     except:
-        logging.info(f'command received doesn\'t exists for this device: {msg.payload}')
+        logging.error(f'command received doesn\'t exists for this device: {msg.payload}')
         return
 
     if not callable(thisDeviceMethod):
-        logging.info(f'command received doesn\'t exists for this device: {msg.payload}')
+        logging.error(f'command received doesn\'t exists for this device: {msg.payload}')
         return
 
+    params = []
+
+    # looking fore required params
+    listOfParam = list(thisDeviceMethod.__code__.co_varnames)
+    for paramName in thisDeviceMethod.__code__.co_varnames:
+        if paramName not in ('self', 'data'):
+            try:
+                params.append(parsedPayload[paramName])
+            except:
+                logging.error(f'The parameter {paramName} is missing. command can\'t be executed')
+                return
+
+    # run the command
     try:
-        thisDeviceMethod()
+        if len(params) == 0:
+            thisDeviceMethod()
+        elif len(params) == 1:
+            thisDeviceMethod(params[0])
+        elif len(params) == 2:
+            thisDeviceMethod(params[0], params[1])
     except:
         logging.exception(f'execution of the command failed: {msg.payload}')
         return
@@ -127,7 +145,7 @@ def shutdown(signum=None, frame=None):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '0.7.0'
+    versionnumber = '0.8.0'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
