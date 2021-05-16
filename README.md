@@ -89,15 +89,14 @@ Devices informations are published when:
 
 ## Device control
 
-You can control your Gardena devices by sending command to the control topic of each device: 
-gardena2mqtt/Location/Device**/control**
-
-ex : gardena2mqtt/MyGarden/MySileno**/control**
-
+You can control your Gardena devices by sending command (JSON format) to the control topic of each device: 
+**gardena2mqtt/Location/Device/control**
 And receive command execution result on: 
-gardena2mqtt/Location/Device**/result**
+**gardena2mqtt/Location/Device/result**
 
-ex : gardena2mqtt/MyGarden/MySileno**/result**
+ex : 
+**gardena2mqtt/MyGarden/MySileno/control**
+**gardena2mqtt/MyGarden/MySileno/result**
 
 ### Mower
 
@@ -143,4 +142,5 @@ docker rmi domochip/gardena2mqtt
 ```
 # Ref/Thanks
 
-I want to thanks those repositories for their codes that inspired me :  
+Many thanks to py-smart-gardena which the library used to build this project : 
+https://github.com/py-smart-gardena/py-smart-gardena
