@@ -55,6 +55,48 @@ def on_mqtt_disconnect(client, userdata, rc):
 def on_mqtt_message(client, userdata, msg):
     logging.info(f'MQTT received : {msg.payload}')
 
+    # looking for the right device
+    splittedTopic = msg.topic.split('/')
+    thisLocationName = splittedTopic[len(splittedTopic)-3]
+    for location in smart_system.locations.values():
+        if location.name == thisLocationName:
+            thisLocation = location
+    thisDeviceName = splittedTopic[len(splittedTopic)-2]
+    for device in thisLocation.devices.values():
+        if device.name == thisDeviceName:
+            thisDevice = device
+    
+    # parse payload
+    try:
+        parsedPayload = json.loads(msg.payload)
+    except:
+        logging.info(f'Incorrect JSON received : {msg.payload}')
+        return
+
+    if 'command' not in parsedPayload:
+        logging.info(f'command missing in payload received : {msg.payload}')
+        return
+
+    if not type(parsedPayload['command']) is str:
+        logging.info(f'Incorrect command in payload received : {msg.payload}')
+        return
+
+    # looking for the method requested
+    try:
+        thisDeviceMethod = getattr(thisDevice, parsedPayload['command'])
+    except:
+        logging.info(f'command received doesn\'t exists for this device: {msg.payload}')
+        return
+
+    if not callable(thisDeviceMethod):
+        logging.info(f'command received doesn\'t exists for this device: {msg.payload}')
+        return
+
+    try:
+        thisDeviceMethod()
+    except:
+        logging.exception(f'execution of the command failed: {msg.payload}')
+        return
 
 def on_ws_status_changed(status):
     global smartsystemclientconnected
@@ -85,7 +127,7 @@ def shutdown(signum=None, frame=None):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '0.6.0'
+    versionnumber = '0.7.0'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
