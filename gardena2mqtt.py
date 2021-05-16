@@ -1,6 +1,7 @@
 import logging
 import time
 import os
+import signal
 from threading import Thread
 import json
 from gardena.smart_system import SmartSystem
@@ -8,15 +9,27 @@ import paho.mqtt.client as mqtt
 
 import pprint
 
+def publish_device(device):
+    logging.info('publish_device')
+
 def publish_everything():
     logging.info('publish_everything')
+
+
+
 
 # callback when the broker responds to our connection request.
 def on_mqtt_connect(client, userdata, flags, rc):
     global mqttclientconnected
     mqttclientconnected = True
     logging.info("Connected to MQTT host")
-    
+    mqttclient.subscribe(f"{mqttprefix}/send")
+    if not smartsystemclientconnected:
+        mqttclient.publish(f"{mqttprefix}/connected", "1", 0, True)
+    else:
+        mqttclient.publish(f"{mqttprefix}/connected", "2", 0, True)
+        publish_everything()
+
 
 # callback when the client disconnects from the broker.
 def on_mqtt_disconnect(client, userdata, rc):
@@ -24,18 +37,31 @@ def on_mqtt_disconnect(client, userdata, rc):
     mqttclientconnected = False
     logging.info("Disconnected from MQTT host")
     
-
+# callback when a message has been received on a topic that the client subscribes to.
 def on_mqtt_message(client, userdata, msg):
     logging.info(f'MQTT received : {msg.payload}')
 
+
 def on_ws_status_changed(status):
+    global smartsystemclientconnected
     logging.info(f'WebSocket status : {status}')
+    smartsystemclientconnected = status
+    if mqttclientconnected:
+        mqttclient.publish(f"{mqttprefix}/connected", ("2" if smartsystemclientconnected else "1"), 0, True)
+        if status:
+            publish_everything()
 
+def on_device_update(device):
+    print(f"The device {device.name} has been updated !")
+    if mqttclientconnected:
+        publish_device(device)
 
-def shutdown():
+def shutdown(signum=None, frame=None):
+    smart_system.quit()
+    if mqttclientconnected:
+        mqttclient.publish(f"{mqttprefix}/connected", "0", 0, True)
     mqttclient.disconnect()
     mqttthread.join()
-
 
 
 
@@ -44,7 +70,7 @@ def shutdown():
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '0.1.0'
+    versionnumber = '0.4.0'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
@@ -70,8 +96,10 @@ if __name__ == "__main__":
     mqttuser = os.getenv("USER")
     mqttpassword = os.getenv("PASSWORD")
 
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
 
-    logging.info('===== Connection to MQTT Broker =====')
+    logging.info('===== Prepare MQTT Client =====')
     mqttclient = mqtt.Client(mqttclientid)
     mqttclient.username_pw_set(mqttuser, mqttpassword)
     mqttclient.on_connect = on_mqtt_connect
@@ -82,19 +110,8 @@ if __name__ == "__main__":
 
     mqttclientconnected = False
 
-    mqttclient.connect(mqtthost, mqttport)
-    mqttthread.start()
 
-    for i in range(50):
-        if mqttclientconnected == True:
-            break
-        time.sleep(0.1)
-
-    if mqttclientconnected == False:
-        shutdown()
-
-
-    logging.info('===== Connection to SmartSystem =====')
+    logging.info('===== Prepare SmartSystem Client =====')
     logging.info(' - create')
     smart_system = SmartSystem(email=gardenauser, password=gardenapassword, client_id=gardenaapikey)
     logging.info(' - authenticate')
@@ -105,24 +122,31 @@ if __name__ == "__main__":
         logging.info(f' - update device list for location : {location.name}')
         smart_system.update_devices(location)
 
-    smart_system.ws_status_callback = on_ws_status_changed
+    # add callbacks
+    smart_system.add_ws_status_callback(on_ws_status_changed)
+    for device in location.devices.values():
+        device.add_callback(on_device_update)
 
-    # smart_system.start_ws(smart_system.locations[LOCATION_ID])
+    smartsystemclientconnected = False
 
 
-    # Work In Progress
+    logging.info('===== Connection To MQTT Broker =====')
+    mqttclient.connect(mqtthost, mqttport)
+    mqttthread.start()
 
-    for location in smart_system.locations.values():
-        LOCATION_ID = location.id
-        locationDict = dict(location.__dict__)
-        del locationDict['smart_system']
-        pprint.pprint(json.dumps(locationDict))
-        pprint.pprint(location.__dict__)
-        for device in location.devices.values():
-            deviceDict = dict(device.__dict__)
-            del deviceDict['smart_system']
-            pprint.pprint(json.dumps(deviceDict))
+    # Wait up to 5 seconds for MQTT connection
+    for i in range(50):
+        if mqttclientconnected == True:
+            break
+        time.sleep(0.1)
 
-    # pprint(smart_system.locations[LOCATION_ID].devices['XX'])
+    if mqttclientconnected == False:
+        shutdown()
 
-    
+
+    logging.info('===== Connection To Gardena SmartSystem =====')
+    for locationid in smart_system.locations:
+        smart_system.start_ws(smart_system.locations[locationid])
+
+    # tie to mqtt client
+    mqttthread.join()
