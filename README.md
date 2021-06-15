@@ -108,7 +108,7 @@ ex :
  - `{"command":"park_until_next_task"}`: Cancel the current operation and return to charging station.
  - `{"command":"park_until_further_notice"}`: Cancel the current operation, return to charging station, ignore schedule.
 
-## Power Socket
+### Power Socket
 
  - `{"command":"start_seconds_to_override", "duration":3600}`: Manual operation (duration is seconds and must be positive multiple of 60)
  - `{"command":"start_override"}`: Manual'on'
@@ -116,14 +116,14 @@ ex :
  - `{"command":"pause"}`: Skip automatic operation until specified time. The currently active operation will NOT be cancelled.
  - `{"command":"unpause"}`: Restore automatic operation if it was paused.
 
-## Smart Irrigation Control (Valve Set)
+### Smart Irrigation Control (Valve Set)
 
  - `{"command":"start_seconds_to_override", "duration":3600, "valve_id":"id"}`: Manual operation (duration is seconds and must be positive multiple of 60)
  - `{"command":"stop_until_next_task", "valve_id":"id"}`: Cancel the current watering, continue with the schedule.
  - `{"command":"pause", "valve_id":"id"}`: Skip automatic operation until specified time. The currently active operation might or might not be cancelled (depends on device model).
  - `{"command":"unpause", "valve_id":"id"}`: Restore automatic operation if it was paused.
 
-## Water Control (Valve)
+### Water Control (Valve)
 
  - `{"command":"start_seconds_to_override", "duration":3600}`: Manual operation (duration is seconds and must be positive multiple of 60)
  - `{"command":"stop_until_next_task"}`: Cancel the current watering, continue with the schedule.
