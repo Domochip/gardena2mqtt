@@ -8,12 +8,11 @@ from gardena.smart_system import SmartSystem
 import paho.mqtt.client as mqtt
 
 def publish_device(device):
-    global locationName
     infos = {"datetime":time.strftime("%Y-%m-%d %H:%M:%S")}
     for attrName in vars(device):
-        if not attrName.startswith('_') and attrName not in ('smart_system', 'callbacks'):
+        if not attrName.startswith('_') and attrName not in ('location', 'callbacks'):
             infos[attrName] = getattr(device, attrName)
-    mqttclient.publish(f"{mqttprefix}/{locationName}/{device.name}", json.dumps(infos))
+    mqttclient.publish(f"{mqttprefix}/{device.location.name}/{device.name}", json.dumps(infos))
 
 def publish_everything():
     global smart_system
@@ -23,7 +22,7 @@ def publish_everything():
 
 def subscribe_device(device):
     if mqttclientconnected:
-        mqttclient.subscribe(f"{mqttprefix}/{locationName}/{device.name}/control")
+        mqttclient.subscribe(f"{mqttprefix}/{device.location.name}/{device.name}/control")
 
 def subscribe_everything():
     global smart_system
@@ -163,7 +162,7 @@ def shutdown(signum=None, frame=None):
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.INFO, datefmt="%H:%M:%S")
 
-    versionnumber = '1.0.0'
+    versionnumber = '1.0.1'
 
     logging.info(f'===== gardena2mqtt v{versionnumber} =====')
 
@@ -213,7 +212,6 @@ if __name__ == "__main__":
     smart_system.update_locations()
     for location in smart_system.locations.values():
         logging.info(f' - update device list for location : {location.name}')
-        locationName = location.name
         smart_system.update_devices(location)
 
     # add callbacks

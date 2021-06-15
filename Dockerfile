@@ -1,6 +1,6 @@
 FROM python:3-alpine
 
-RUN pip install websocket-client==0.57.0 py-smart-gardena paho-mqtt
+RUN pip install py-smart-gardena==0.7.12 paho-mqtt
 
 WORKDIR /app
 
