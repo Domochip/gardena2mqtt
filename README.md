@@ -26,8 +26,8 @@ docker run \
     -e GARDENA_APIKEY="GardenaApiKey" \
     -e HOST="192.168.1.x" \
     -e PORT=1883 \
-    -e PREFIX="sms2mqtt" \
-    -e CLIENTID="sms2mqttclid" \
+    -e PREFIX="gardena2mqtt" \
+    -e CLIENTID="gardena2mqttclid" \
     -e USER="usr" \
     -e PASSWORD="pass" \
     domochip/gardena2mqtt
@@ -37,7 +37,7 @@ For Docker-Compose, use the following yaml:
 ```yaml
 version: '3'
 services:
-  sms2mqtt:
+  gardena2mqtt:
     container_name: gardena2mqtt
     image: domochip/gardena2mqtt
     devices:
