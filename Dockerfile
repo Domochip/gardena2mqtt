@@ -1,6 +1,6 @@
 FROM python:3-alpine
 
-RUN pip install py-smart-gardena==0.7.12 paho-mqtt
+RUN pip install py-smart-gardena paho-mqtt
 
 WORKDIR /app
 
