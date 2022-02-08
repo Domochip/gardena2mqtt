@@ -1,8 +1,10 @@
 FROM python:3-alpine
 
-RUN pip install py-smart-gardena paho-mqtt
-
 WORKDIR /app
+
+COPY requirements.txt requirements.txt
+
+RUN pip install -r requirements.txt
 
 COPY gardena2mqtt.py .
 
