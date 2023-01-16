@@ -40,8 +40,6 @@ services:
   gardena2mqtt:
     container_name: gardena2mqtt
     image: domochip/gardena2mqtt
-    devices:
-    - /dev/serial/by-id/usb-HUAWEI_HUAWEI_Mobile-if00-port0:/dev/mobile
     environment:
     - GARDENA_USER=GardenaUserName
     - GARDENA_PASSWORD=GardenaPassword
