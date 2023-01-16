@@ -1,7 +1,7 @@
 # Prerequisites
 
 You need one or more Garden Smart system devices : https://www.gardena.com/int/products/smart/  
-A developper application to access gardena API : https://developer.husqvarnagroup.cloud/docs/getting-started  
+A developper application to access gardena API : https://developer.husqvarnagroup.cloud/docs/get-started  
 This application needs to be connected to Authentication API AND GARDENA smart system API like this : 
 ![Application](https://raw.githubusercontent.com/Domochip/gardena2mqtt/master/application.png)  
 ("Create application" button -> Fill In Name only -> "Create" button -> "+Connect new API" button -> Add both API)
@@ -60,7 +60,7 @@ services:
 #### Environment variables
 * `GARDENA_USER`: Gardena username (it's an email address)
 * `GARDENA_PASSWORD`: Gardena password
-* `GARDENA_APIKEY`: Gardena Application key you got at https://developer.husqvarnagroup.cloud/apps
+* `GARDENA_APIKEY`: Gardena Application key you got at https://developer.husqvarnagroup.cloud/applications
 * `HOST`: IP address or hostname of your MQTT broker
 * `PORT`: **Optional**, port of your MQTT broker
 * `PREFIX`: **Optional**, prefix used in topics for subscribe/publish
